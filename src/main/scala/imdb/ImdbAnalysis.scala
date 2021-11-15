@@ -75,8 +75,19 @@ object ImdbAnalysis {
 
   // Hint: There could be an input RDD that you do not really need in your implementation.
   def task4(l1: RDD[TitleBasics], l2: RDD[TitleCrew], l3: RDD[NameBasics]): RDD[(String, Int)] = {
-    val temp = List(("placeholder", 0))
-    sc.parallelize(temp)
+    val l3_filtered = l3.filter{ case x => 
+      x.primaryName != None && x.knownForTitles != None &&
+      x.knownForTitles.get.length >= 2
+    }
+    val l1_filtered = l1.filter{ case x => 
+      x.startYear != None && x.startYear.get >= 2010 && x.startYear.get <= 2021
+    }.map(x => (x.tconst, x.primaryTitle.get))
+    l3_filtered.flatMap(x => (x.knownForTitles.get,(List.fill(x.knownForTitles.get.length)(x.primaryName.get)),(List.fill(x.knownForTitles.get.length)(x.nconst))).zipped.toList)
+    .map(x => (x._1, (x._2, x._3)))
+    .join(l1_filtered).map{ case (k,v) => (v._1._1, v._1._2) }
+    .groupBy(x => x._2)
+    .filter{case(k,v) => v.size >= 2}
+    .map{case(k,v)=>(v.head._1,v.size)}
   }
 
   def main(args: Array[String]) {
@@ -87,23 +98,23 @@ object ImdbAnalysis {
     // .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
     // .foreach(println)
 
-    val l2_map = titleRatingsRDD.map(x => (x.tconst, x.averageRating))
-    val l1_filtered = titleBasicsRDD.filter({ case x => 
-      x.titleType != None && x.titleType.get == "movie" && 
-      x.primaryTitle != None && x.genres != None &&
-      x.startYear != None && x.startYear.get >= 1900 && 
-      x.startYear.get <= 1999})
-    .map(x => (x.tconst, (x.startYear.get, x.primaryTitle.get, x.genres.get)))
-    l1_filtered.join(l2_map)
-    .map{ case (k,v) => (v._1._1, v._1._2, v._1._3, v._2)}
-    .groupBy(x => x._1 / 10 % 10)
-    .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
-    .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.maxBy(_._3))})}
-    .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}
+    val l3_filtered = nameBasicsRDD.filter{ case x => 
+      x.primaryName != None && x.knownForTitles != None &&
+      x.knownForTitles.get.length >= 2
+    }
+    val l1_filtered = titleBasicsRDD.filter{ case x => 
+      x.startYear != None && x.startYear.get >= 2010 && x.startYear.get <= 2021
+    }.map(x => (x.tconst, x.primaryTitle.get))
+    l3_filtered.flatMap(x => (x.knownForTitles.get,(List.fill(x.knownForTitles.get.length)(x.primaryName.get)),(List.fill(x.knownForTitles.get.length)(x.nconst))).zipped.toList)
+    .map(x => (x._1, (x._2, x._3)))
+    .join(l1_filtered).map{ case (k,v) => (v._1._1, v._1._2) }
+    .groupBy(x => x._2)
+    .filter{case(k,v) => v.size >= 2}
+    .map{case(k,v)=>(v.head._1,v.size)}
     .foreach(println)
-    // .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
-    // .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.sorted.maxBy(_._3))})}
-    // .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}.toList.sorted
+    //
+    //.filter{case(k,v) => v.length >= 2}
+    //.map{case(k,v)=>(v.head._2,v.length)}
 
     sc.stop()
 
