@@ -57,8 +57,20 @@ object ImdbAnalysis {
   }
 
   def task3(l1: RDD[TitleBasics], l2: RDD[TitleRatings]): RDD[(Int, String, String)] = {
-    val temp = List((0, "placeholder", "placeholder"))
-    sc.parallelize(temp)
+    val l2_map = l2.map(x => (x.tconst, x.averageRating))
+    val l1_filtered = l1.filter({ case x => 
+      x.titleType != None && x.titleType.get == "movie" && 
+      x.primaryTitle != None && x.genres != None &&
+      x.startYear != None && x.startYear.get >= 1900 && 
+      x.startYear.get <= 1999})
+    .map(x => (x.tconst, (x.startYear.get, x.primaryTitle.get, x.genres.get)))
+    l1_filtered.join(l2_map)
+    .map{ case (k,v) => (v._1._1, v._1._2, v._1._3, v._2)}
+    .groupBy(x => x._1 / 10 % 10)
+    .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
+    .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.maxBy(_._3))})}
+    .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}
+    .sortBy(_._1).sortBy(_._2)
   }
 
   // Hint: There could be an input RDD that you do not really need in your implementation.
@@ -68,13 +80,31 @@ object ImdbAnalysis {
   }
 
   def main(args: Array[String]) {
-    val temp = List((0.toFloat, 0, 0, "placeholder"))
-    titleBasicsRDD.filter({ x => x.genres != None && x.runtimeMinutes != None})
-    .flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
-    .groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
-    .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
+    // val temp = List((0.toFloat, 0, 0, "placeholder"))
+    // titleBasicsRDD.filter({ x => x.genres != None && x.runtimeMinutes != None})
+    // .flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
+    // .groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
+    // .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
+    // .foreach(println)
+
+    val l2_map = titleRatingsRDD.map(x => (x.tconst, x.averageRating))
+    val l1_filtered = titleBasicsRDD.filter({ case x => 
+      x.titleType != None && x.titleType.get == "movie" && 
+      x.primaryTitle != None && x.genres != None &&
+      x.startYear != None && x.startYear.get >= 1900 && 
+      x.startYear.get <= 1999})
+    .map(x => (x.tconst, (x.startYear.get, x.primaryTitle.get, x.genres.get)))
+    l1_filtered.join(l2_map)
+    .map{ case (k,v) => (v._1._1, v._1._2, v._1._3, v._2)}
+    .groupBy(x => x._1 / 10 % 10)
+    .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
+    .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.maxBy(_._3))})}
+    .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}
     .foreach(println)
-    //sc.parallelize(temp).foreach(println)
+    // .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
+    // .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.sorted.maxBy(_._3))})}
+    // .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}.toList.sorted
+
     sc.stop()
 
 
