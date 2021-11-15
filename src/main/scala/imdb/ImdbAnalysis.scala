@@ -37,8 +37,10 @@ object ImdbAnalysis {
   // val nameBasicsRDD: RDD[NameBasics] = sc.parallelize(ImdbData.readFile(ImdbData.nameBasicsPath, ImdbData.parseNameBasics _));
 
   def task1(rdd: RDD[TitleBasics]): RDD[(Float, Int, Int, String)] = {
-    val temp = List((0.toFloat, 0, 0, "placeholder"))
-    sc.parallelize(temp)
+    rdd.filter({ x => x.genres != None && x.runtimeMinutes != None})
+    .flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
+    .groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
+    .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
   }
 
   def task2(l1: RDD[TitleBasics], l2: RDD[TitleRatings]): RDD[String] = {
@@ -59,10 +61,11 @@ object ImdbAnalysis {
 
   def main(args: Array[String]) {
     val temp = List((0.toFloat, 0, 0, "placeholder"))
-    titleBasicsRDD.filter({ x => x.genres != None && x.runtimeMinutes != None}).foreach(println)
-    //.flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
-    //.groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
-    //.map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)}).toList
+    titleBasicsRDD.filter({ x => x.genres != None && x.runtimeMinutes != None})
+    .flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
+    .groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
+    .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
+    .foreach(println)
     //sc.parallelize(temp).foreach(println)
     sc.stop()
 
