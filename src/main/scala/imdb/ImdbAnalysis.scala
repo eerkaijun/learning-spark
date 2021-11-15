@@ -44,8 +44,16 @@ object ImdbAnalysis {
   }
 
   def task2(l1: RDD[TitleBasics], l2: RDD[TitleRatings]): RDD[String] = {
-    val temp = List(("placeholder"))
-    sc.parallelize(temp)
+    val l1_filtered = l1.filter({ case x => 
+      x.titleType != None && x.titleType.get == "movie" && 
+      x.primaryTitle != None && 
+      x.startYear != None && x.startYear.get >= 1990 && 
+      x.startYear.get <= 2018})
+      .map(x => (x.tconst, x.primaryTitle.get))
+    val l2_filtered = l2.filter({ case y =>
+      y.averageRating >= 7.5 && y.numVotes >= 500000})
+      .map(y => (y.tconst, y.numVotes))
+    l1_filtered.join(l2_filtered).map{ case (k,v) => v._1}
   }
 
   def task3(l1: RDD[TitleBasics], l2: RDD[TitleRatings]): RDD[(Int, String, String)] = {
