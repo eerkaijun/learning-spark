@@ -91,45 +91,18 @@ object ImdbAnalysis {
   }
 
   def main(args: Array[String]) {
-    // val temp = List((0.toFloat, 0, 0, "placeholder"))
-    // titleBasicsRDD.filter({ x => x.genres != None && x.runtimeMinutes != None})
-    // .flatMap{ case x => x.genres.get.zip(List.fill(x.genres.get.length)(x.runtimeMinutes.get))}
-    // .groupBy(x => x._1).map { case (k,v) => (k,v.map(_._2))}
-    // .map({ case (k,v) => (v.sum.toFloat/v.size, v.min, v.max, k)})
-    // .foreach(println)
+    //sc.stop()
 
-    val l3_filtered = nameBasicsRDD.filter{ case x => 
-      x.primaryName != None && x.knownForTitles != None &&
-      x.knownForTitles.get.length >= 2
-    }
-    val l1_filtered = titleBasicsRDD.filter{ case x => 
-      x.startYear != None && x.startYear.get >= 2010 && x.startYear.get <= 2021
-    }.map(x => (x.tconst, x.primaryTitle.get))
-    l3_filtered.flatMap(x => (x.knownForTitles.get,(List.fill(x.knownForTitles.get.length)(x.primaryName.get)),(List.fill(x.knownForTitles.get.length)(x.nconst))).zipped.toList)
-    .map(x => (x._1, (x._2, x._3)))
-    .join(l1_filtered).map{ case (k,v) => (v._1._1, v._1._2) }
-    .groupBy(x => x._2)
-    .filter{case(k,v) => v.size >= 2}
-    .map{case(k,v)=>(v.head._1,v.size)}
-    .foreach(println)
-    //
-    //.filter{case(k,v) => v.length >= 2}
-    //.map{case(k,v)=>(v.head._2,v.length)}
-
+    val durations = timed("Task 1", task1(titleBasicsRDD).collect().toList)
+    val titles = timed("Task 2", task2(titleBasicsRDD, titleRatingsRDD).collect().toList)
+    val topRated = timed("Task 3", task3(titleBasicsRDD, titleRatingsRDD).collect().toList)
+    val crews = timed("Task 4", task4(titleBasicsRDD, titleCrewRDD, nameBasicsRDD).collect().toList)
+    println(durations)
+    println(titles)
+    println(topRated)
+    println(crews)
+    println(timing)
     sc.stop()
-
-
-
-    // val durations = timed("Task 1", task1(titleBasicsRDD).collect().toList)
-    // val titles = timed("Task 2", task2(titleBasicsRDD, titleRatingsRDD).collect().toList)
-    // val topRated = timed("Task 3", task3(titleBasicsRDD, titleRatingsRDD).collect().toList)
-    // val crews = timed("Task 4", task4(titleBasicsRDD, titleCrewRDD, nameBasicsRDD).collect().toList)
-    // println(durations)
-    // println(titles)
-    // println(topRated)
-    // println(crews)
-    // println(timing)
-    // sc.stop()
   }
 
   val timing = new StringBuffer
