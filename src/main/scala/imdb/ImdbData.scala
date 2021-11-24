@@ -18,10 +18,6 @@ object ImdbData {
   private[imdb] def titleCrewPath = filePath("title.crew")
   private[imdb] def nameBasicsPath = filePath("name.basics")
 
-  private[imdb] def readFile[A](filename: String, parseFunction: String => A) = {
-    new String(Files.readAllBytes(Paths.get(filename))).split('\n').map(parseFunction).toList
-  }
-
   private[imdb] def parseAttribute(word: String): Option[String] = 
     if(word == SKIP_VAL) None else Some(word)
 

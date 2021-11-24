@@ -21,20 +21,16 @@ object ImdbAnalysis {
   val sc: SparkContext = new SparkContext(conf);
 
   // Hint: use a combination of `ImdbData.titleBasicsPath` and `ImdbData.parseTitleBasics`
-  val titleBasicsRDD: RDD[TitleBasics] = sc.textFile(ImdbData.titleBasicsPath).map(ImdbData.parseTitleBasics _)
-  // val titleBasicsRDD: RDD[TitleBasics] = sc.parallelize(ImdbData.readFile(ImdbData.titleBasicsPath, ImdbData.parseTitleBasics _));
+  val titleBasicsRDD: RDD[TitleBasics] = sc.textFile(ImdbData.titleBasicsPath).map(ImdbData.parseTitleBasics _);
 
   // Hint: use a combination of `ImdbData.titleRatingsPath` and `ImdbData.parseTitleRatings`
   val titleRatingsRDD: RDD[TitleRatings] = sc.textFile(ImdbData.titleRatingsPath).map(ImdbData.parseTitleRatings _);
-  //val titleRatingsRDD: RDD[TitleRatings] = sc.parallelize(ImdbData.readFile(ImdbData.titleRatingsPath, ImdbData.parseTitleRatings _));
 
   // Hint: use a combination of `ImdbData.titleCrewPath` and `ImdbData.parseTitleCrew`
   val titleCrewRDD: RDD[TitleCrew] = sc.textFile(ImdbData.titleCrewPath).map(ImdbData.parseTitleCrew _);
-  // val titleCrewRDD: RDD[TitleCrew] = sc.parallelize(ImdbData.readFile(ImdbData.titleCrewPath, ImdbData.parseTitleCrew _));
 
   // Hint: use a combination of `ImdbData.nameBasicsPath` and `ImdbData.parseNameBasics`
   val nameBasicsRDD: RDD[NameBasics] = sc.textFile(ImdbData.nameBasicsPath).map(ImdbData.parseNameBasics _);
-  // val nameBasicsRDD: RDD[NameBasics] = sc.parallelize(ImdbData.readFile(ImdbData.nameBasicsPath, ImdbData.parseNameBasics _));
 
   def task1(rdd: RDD[TitleBasics]): RDD[(Float, Int, Int, String)] = {
     rdd.filter({ x => x.genres != None && x.runtimeMinutes != None})
