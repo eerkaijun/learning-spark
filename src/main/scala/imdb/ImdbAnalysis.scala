@@ -68,9 +68,9 @@ object ImdbAnalysis {
     .map{ case (k,v) => (v._1._1, v._1._2, v._1._3, v._2)}
     .groupBy(x => x._1 / 10 % 10)
     .map{ case(k,v) => (k,v.flatMap(x => (x._3,(List.fill(x._3.length)(x._2)),(List.fill(x._3.length)(x._4))).zipped.toList))}
-    .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.maxBy(_._3))})}
+    .map{ case(k,v) => (k,v.groupBy(_._1).map{ case (k,v) => (k, v.toList.sorted.maxBy(_._3))})}
     .flatMap{ case(k,v) => v.map{ case(genre, tuple) => (k,genre,tuple._2)}}
-    .sortBy(_._1).sortBy(_._2)
+    .sortBy(_._2).sortBy(_._1)
   }
 
   // Hint: There could be an input RDD that you do not really need in your implementation.
@@ -91,8 +91,6 @@ object ImdbAnalysis {
   }
 
   def main(args: Array[String]) {
-    //sc.stop()
-
     val durations = timed("Task 1", task1(titleBasicsRDD).collect().toList)
     val titles = timed("Task 2", task2(titleBasicsRDD, titleRatingsRDD).collect().toList)
     val topRated = timed("Task 3", task3(titleBasicsRDD, titleRatingsRDD).collect().toList)
